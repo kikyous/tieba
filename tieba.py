@@ -125,7 +125,7 @@ class TieBa:
     return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank">',page)
 
 if __name__ == '__main__':
-    h = TieBa('nexus_7_','11352355')
+    h = TieBa('username','password')
     if h.login():
       print('登陆成功')
       for i in h.getTibBas():
