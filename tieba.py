@@ -9,15 +9,14 @@ import re,time,os,random
 class Log:
   def __init__(self):
     self.PATH=os.path.abspath(os.path.expanduser('.'))
-    self.fd=open(self.PATH+"/log.txt",'a')
+    self.fd=open(self.PATH+"/tieba.log.txt",'a')
     t=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    self.log("## %s"%t,False)
-  def log(self,s,indent=True):
-    if indent:
-      s="  %s"%s
-    print(s.decode("u8"))
-    self.fd.write(s)
-    self.fd.write("\n")
+    self.log("## %s"%t)
+  def log(self,*args):
+    for i in args:
+      print(i)
+      self.fd.write(i)
+      self.fd.write("\n")
 
 class TieBa:
   def __init__(self,username,password):
@@ -25,21 +24,46 @@ class TieBa:
     self.password=password
     cj = cookielib.CookieJar()
     self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    urllib2.install_opener(self.opener)
     self.opener.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux i686)')]
+    urllib2.install_opener(self.opener)
+
+  def urlopen(self,*args):
+    try:
+      if len(args)==1:
+        fd=urllib2.urlopen(args[0])
+      else:
+        req = urllib2.Request(args[0], urllib.urlencode(args[1]))
+        fd = urllib2.urlopen(req)
+      return fd.read()
+    except urllib2.HTTPError:
+      l.log('发生错误，一秒钟后重试.')
+      time.sleep(1)
+      if len(args)>1 and 'tbs' in args[1]:
+        if 'tid' in args[1]:
+          args[1]['tbs']=self.getTbs(args[1]['tid'])
+        else:
+          args[1]['tbs']=self.getTbs()
+      self.urlopen(*args)
 
 
   def getFid(self):
-    page = urllib2.urlopen(self.tb_url).read()
-    return re.findall("fid:'(\d+)'",page)[0]
+    page = self.urlopen(self.tb_url)
+    fid=re.findall("fid:'(\d+)'",page)
+    if fid==[]:
+      l.log('获取fid失败一秒钟后重新获取.')
+      time.sleep(1)
+      return self.getFid()
+    else:
+      return fid[0]
+
 
   def getTbs(self,tid=None):
     if tid:
-      page = urllib2.urlopen("http://tieba.baidu.com/p/%s"%tid).read()
-      print "http://tieba.baidu.com/p/%s"%tid
+      page = self.urlopen("http://tieba.baidu.com/p/%s"%tid)
+      l.log ("http://tieba.baidu.com/p/%s"%tid)
       tbs=re.findall("'tbs'  : \"(\w+)\"",page)[0]
     else:
-      page = urllib2.urlopen(self.tb_url).read()
+      page = self.urlopen(self.tb_url)
       tbs=re.findall('PageData.tbs = "(\w+)"',page)[0]
 
     return tbs
@@ -48,13 +72,15 @@ class TieBa:
     sign_url="http://tieba.baidu.com/sign/add"
     data={'ie':'utf-8','kw':self.kw}
     data['tbs']=self.getTbs()
-    req = urllib2.Request(sign_url, urllib.urlencode(data))
-    res = self.opener.open(req).read()
-    res = json.loads(res)
-    if res['error']=='':
-      print '签到成功','今日本吧第 %d 个签到'%res['data']['finfo']['current_rank_info']['sign_count']
+    res = self.urlopen(sign_url,data)
+    try:
+      res = json.loads(res)
+    except:
+      pass
+    if not res or res['error']!='':
+      l.log ('签到失败')
     else:
-      print '签到失败'
+      l.log ('签到成功','今日本吧第 %d 个签到'%res['data']['finfo']['current_rank_info']['sign_count'])
 
   def getContent(self):
     contents=['houhou','kankan','heihei']
@@ -74,19 +100,15 @@ class TieBa:
         'tid':tid
         }
     data['tbs']=self.getTbs(tid)
-    req = urllib2.Request(reply_url, urllib.urlencode(data))
-    fd = self.opener.open(req)
+    fd = self.urlopen(reply_url,data)
 
   def login(self):
     def post():
       url = 'https://passport.baidu.com/v2/api/?login'
-      req = urllib2.Request(url, urllib.urlencode(data))
       try:
-        fd = self.opener.open(req)
+        page = self.urlopen(url,data)
       except Exception, e:
         return False
-      res=fd.read()
-      fd.close()
 
     data={"username":self.username,"password":self.password,"verifycode":'',
         "mem_pass":"on","charset":"GBK","isPhone":"false","index":"0",
@@ -96,17 +118,15 @@ class TieBa:
 
     post()
     token_url="https://passport.baidu.com/v2/api/?loginliteinfo&username=%s&isPhone=false&tpl=tb&immediatelySubmit=false&index=0&t=1345615911499"%self.username
-    token_page=urllib2.urlopen(token_url).read()
+    token_page=self.urlopen(token_url)
     data["token"]=re.findall("token:'(\w+)'" ,token_page)[0]
     post()
 
     return True
 
   def getTopics(self):
-    page=urllib2.urlopen(self.tb_url).read()
-
+    page=self.urlopen(self.tb_url)
     tids=re.findall('<a href="/p/(\d+)" target="_blank" class="\w+">.+</a>',page)
-    print tids
     return tids
 
   def enter(self,tb_url):
@@ -118,16 +138,18 @@ class TieBa:
     self.kw=re.findall("kw=([%\w]+)",self.tb_url)[0]
     self.kw=urllib.unquote(self.kw).decode("gbk").encode("u8")
 
-    print '> 进入贴吧',self.kw
+    l.log ('> 进入贴吧 %s'%self.kw)
 
   def getTibBas(self):
-    page=urllib2.urlopen('http://tieba.baidu.com/').read()
-    return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank">',page)
+    page=self.urlopen('http://tieba.baidu.com/')
+    return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank"',page)
 
 if __name__ == '__main__':
-    h = TieBa('username','password')
-    if h.login():
-      print('登陆成功')
-      for i in h.getTibBas():
-        h.enter(i)
-        h.sign()
+  l=Log()
+  h = TieBa('username','password')
+  if h.login():
+    l.log('登陆成功')
+    for i in h.getTibBas():
+      h.enter(i)
+      # h.reply(h.getTopics()[3:6])
+      h.sign()
