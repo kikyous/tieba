@@ -104,7 +104,7 @@ class TieBa:
     reply_url="http://tieba.baidu.com/f/commit/post/add"
     data={
         'kw':self.kw,'ie':'utf-8','rich_text':'1','anonymous':'0',
-        'content':'houhou',
+        'content':self.getContent(),
         'fid':self.fid,
         'tid':tid
         }
@@ -114,10 +114,7 @@ class TieBa:
   def login(self):
     def post():
       url = 'https://passport.baidu.com/v2/api/?login'
-      try:
-        page = self.urlopen(url,data)
-      except Exception, e:
-        return False
+      page = self.urlopen(url,data)
 
     data={"username":self.username,"password":self.password,"verifycode":'',
         "mem_pass":"on","charset":"GBK","isPhone":"false","index":"0",
