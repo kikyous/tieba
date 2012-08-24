@@ -1,26 +1,35 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-
+accounts_here = [
+  {"username":'00000','password':'00000'},
+  {"username":'00000','password':'00000'},
+]
 import urllib
 import urllib2
 import cookielib
 import json
 import re,time,os,random
 class Log:
+  def _(self,s):
+    try:
+      return s.decode('utf8')
+    except:
+      return s
+
   def __init__(self):
     self.PATH=os.path.abspath(os.path.expanduser('.'))
-    self.fd=open(self.PATH+"/tieba.log.txt",'a')
+    self.fd=open(self.PATH+"/log.tieba.txt",'a')
     t=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     self.log("## %s"%t)
   def log(self,*args):
     for i in args:
-      print(i)
+      print(self._(i))
       self.fd.write(i)
       self.fd.write("\n")
 
 class TieBa:
   def __init__(self,username,password):
-    self.username=username
+    self.username=username.decode("utf8").encode("gbk")
     self.password=password
     cj = cookielib.CookieJar()
     self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -146,10 +155,11 @@ class TieBa:
 
 if __name__ == '__main__':
   l=Log()
-  h = TieBa('username','password')
-  if h.login():
-    l.log('登陆成功')
-    for i in h.getTibBas():
-      h.enter(i)
-      # h.reply(h.getTopics()[3:6])
-      h.sign()
+  for a in accounts_here:
+    t = TieBa(a['username'],a['password'])
+    if t.login():
+      l.log('%s 登陆成功'%t.username.decode("gbk").encode("u8"))
+      for i in t.getTibBas():
+        t.enter(i)
+        # h.reply(h.getTopics()[3:6])
+        t.sign()
