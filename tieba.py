@@ -1,14 +1,22 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
+#email:kikyous@163.com
+
 accounts_here = [
   {"username":'00000','password':'00000'},
-  {"username":'00000','password':'00000'},
+  {"username":'11111','password':'11111'},
 ]
 import urllib
 import urllib2
 import cookielib
 import json
 import re,time,os,random
+
+try:
+  from accounts import accounts_here
+except:
+  pass
+
 class Log:
   def _(self,s):
     try:
@@ -160,3 +168,4 @@ if __name__ == '__main__':
         t.enter(i)
         # h.reply(h.getTopics()[3:6])
         t.sign()
+  raw_input('\npress enter to continue.') #如果不需要这一行请删掉
