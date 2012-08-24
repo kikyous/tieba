@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
+#email:kikyous@163.com
+
 accounts_here = [
   {"username":'00000','password':'00000'},
+  {"username":'11111','password':'11111'},
 ]
 import urllib
 import urllib2
 import cookielib
 import json
 import re,time,os,random
+
+try:
+  from accounts import accounts_here
+except:
+  pass
+
 class Log:
   def _(self,s):
     try:
@@ -155,9 +164,8 @@ if __name__ == '__main__':
     t = TieBa(a['username'],a['password'])
     if t.login():
       l.log('%s 登陆成功'%t.username.decode("gbk").encode("u8"))
-      print 'DEBUG',t.getTibBas()
       for i in t.getTibBas():
         t.enter(i)
         # h.reply(h.getTopics()[3:6])
         t.sign()
-  raw_input('press enter to continue.')
+  raw_input('\npress enter to continue.') #如果不需要这一行请删掉
