@@ -2,7 +2,6 @@
 #-*- coding:utf-8 -*-
 accounts_here = [
   {"username":'00000','password':'00000'},
-  {"username":'00000','password':'00000'},
 ]
 import urllib
 import urllib2
@@ -156,7 +155,9 @@ if __name__ == '__main__':
     t = TieBa(a['username'],a['password'])
     if t.login():
       l.log('%s 登陆成功'%t.username.decode("gbk").encode("u8"))
+      print 'DEBUG',t.getTibBas()
       for i in t.getTibBas():
         t.enter(i)
         # h.reply(h.getTopics()[3:6])
         t.sign()
+  raw_input('press enter to continue.')
