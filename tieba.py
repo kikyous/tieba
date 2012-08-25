@@ -12,10 +12,6 @@ import cookielib
 import json
 import re,time,os,random,sys
 
-try:
-  from accounts import accounts_here
-except:
-  pass
 
 class Log:
   if sys.platform.startswith('win'):
@@ -164,6 +160,10 @@ class TieBa:
     return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank"',page)
 
 if __name__ == '__main__':
+  try:
+    from accounts import accounts_here
+  except:
+    pass
   l=Log()
   for a in accounts_here:
     t = TieBa(a['username'],a['password'])
