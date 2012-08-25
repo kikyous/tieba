@@ -10,7 +10,7 @@ import urllib
 import urllib2
 import cookielib
 import json
-import re,time,os,random
+import re,time,os,random,sys
 
 try:
   from accounts import accounts_here
@@ -18,11 +18,16 @@ except:
   pass
 
 class Log:
-  def _(self,s):
-    try:
-      return s.decode('utf8')
-    except:
+  if sys.platform.startswith('win'):
+    def _(self,s):
+      try:
+        return s.decode('utf8')
+      except:
+        return s
+  else:
+    def _(self,s):
       return s
+
 
   def __init__(self):
     self.PATH=os.path.abspath(os.path.expanduser('.'))
