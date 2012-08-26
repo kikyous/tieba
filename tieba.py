@@ -12,7 +12,6 @@ import cookielib
 import json
 import re,time,os,random,sys
 
-
 class Log:
   if sys.platform.startswith('win'):
     def _(self,s):
@@ -26,7 +25,7 @@ class Log:
 
 
   def __init__(self):
-    self.PATH=os.path.abspath(os.path.expanduser('.'))
+    self.PATH=sys.path[0]
     self.fd=open(self.PATH+"/log.tieba.txt",'a')
     t=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     self.log("## %s"%t)
@@ -173,4 +172,5 @@ if __name__ == '__main__':
         t.enter(i)
         # h.reply(h.getTopics()[3:6])
         t.sign()
-  raw_input('\npress enter to continue.') #如果不需要这一行请删掉
+  if len(sys.argv) < 2:
+    raw_input('\npress enter to continue.') #如果不需要这一行请删掉
