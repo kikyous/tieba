@@ -3,8 +3,8 @@
 #email:kikyous@163.com
 
 accounts_here = [
-  {"username":'00000','password':'00000'},
-  {"username":'11111','password':'11111'},
+  {"username":'your_username','password':'your_password'},
+  {"username":'your_anther_username','password':'your_password'},
 ]
 import urllib
 import urllib2
@@ -88,12 +88,16 @@ class TieBa:
   def sign(self):
     sign_url="http://tieba.baidu.com/sign/add"
     data={'ie':'utf-8','kw':self.kw}
-    data['tbs']=self.getTbs()
-    res = self.urlopen(sign_url,data)
-    try:
-      res = json.loads(res)
-    except:
-      pass
+    tbs=self.getTbs()
+    if tbs==None:
+      res=None
+    else:
+      data['tbs']=tbs
+      res = self.urlopen(sign_url,data)
+      try:
+        res = json.loads(res)
+      except:
+        pass
     if not res or res['error']!='':
       l.log ('签到失败')
     else:
@@ -193,11 +197,13 @@ class WapTieBa(TieBa):
     if tid:
       page = self.urlopen("http://tieba.baidu.com/p/%s"%tid)
       l.log ("http://tieba.baidu.com/p/%s"%tid)
-      tbs=re.findall("'tbs'  : \"(\w+)\"",page)[0]
+      tbs=re.findall("'tbs'  : \"(\w+)\"",page)
     else:
       page = self.urlopen(self.tb_url)
-      tbs=re.findall('<input type="hidden" name="tbs" value="(\w+)"/>',page)[0]
-    return tbs
+      tbs=re.findall('<input type="hidden" name="tbs" value="(\w+)"/>',page)
+    if tbs==[]:
+      return None
+    return tbs[0]
 
 if __name__ == '__main__':
   try:
