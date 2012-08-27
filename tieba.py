@@ -37,7 +37,7 @@ class Log:
 
 class TieBa:
   def __init__(self,username,password):
-    self.username=username.decode("utf8").encode("gbk")
+    self.username=username
     self.password=password
     cj = cookielib.CookieJar()
     self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -124,7 +124,7 @@ class TieBa:
       url = 'https://passport.baidu.com/v2/api/?login'
       page = self.urlopen(url,data)
 
-    data={"username":self.username,"password":self.password,"verifycode":'',
+    data={"username":self.username.decode("utf8").encode("gbk"),"password":self.password,"verifycode":'',
         "mem_pass":"on","charset":"GBK","isPhone":"false","index":"0",
         "safeflg":"0","staticpage":"http://tieba.baidu.com/tb/v2Jump.html",
           "loginType":"1","tpl":"tb","codestring":'',
@@ -158,6 +158,47 @@ class TieBa:
     page=self.urlopen('http://tieba.baidu.com/')
     return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank"',page)
 
+class WapTieBa(TieBa):
+  def __init__(self,username,password):
+    TieBa.__init__(self,username,password)
+  def login(self):
+    url='http://wappass.baidu.com/passport/'
+    data={
+        'login_username':self.username,
+        'login_loginpass':self.password,
+        'aaa':'登录',
+        'login':'yes',
+        'can_input':'0',
+        'u':'http://wapp.baidu.com/f/q---wiaui_1346040694_8698--1-1-0/m?',
+        'tpl':'wapp',
+        'tn':'bdIndex',
+        'pu':'',
+        'ssid':'000000',
+        'from':'',
+        'bd_page_type':'1',
+        'uid':'wiaui_1346040694_8698',
+        }
+    return self.urlopen(url,data)
+
+  def getTibBas(self):
+    page=self.urlopen('http://wapp.baidu.com/m?tn=bdFBW&tab=favorite')
+    return re.findall('<a href="/f/[-_\w]+?/m\?kw=([%\w]+?)">.+?</a>',page)
+
+  def enter(self,tb_kw):
+    self.kw=urllib.unquote(tb_kw)
+    self.tb_url='http://wapp.baidu.com/m?kw=%s'%self.kw
+    l.log ('> 进入贴吧 %s'%self.kw)
+
+  def getTbs(self,tid=None):
+    if tid:
+      page = self.urlopen("http://tieba.baidu.com/p/%s"%tid)
+      l.log ("http://tieba.baidu.com/p/%s"%tid)
+      tbs=re.findall("'tbs'  : \"(\w+)\"",page)[0]
+    else:
+      page = self.urlopen(self.tb_url)
+      tbs=re.findall('<input type="hidden" name="tbs" value="(\w+)"/>',page)[0]
+    return tbs
+
 if __name__ == '__main__':
   try:
     from accounts import accounts_here
@@ -165,12 +206,12 @@ if __name__ == '__main__':
     pass
   l=Log()
   for a in accounts_here:
-    t = TieBa(a['username'],a['password'])
+    t = WapTieBa(a['username'],a['password'])
     if t.login():
-      l.log('%s 登陆成功'%t.username.decode("gbk").encode("u8"))
+      l.log('%s 登陆成功'%t.username)
       for i in t.getTibBas():
         t.enter(i)
         # h.reply(h.getTopics()[3:6])
         t.sign()
   if len(sys.argv) < 2:
-    raw_input('\npress enter to continue.') #如果不需要这一行请删掉
+    raw_input('\npress enter to continue.')
