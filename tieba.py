@@ -47,7 +47,7 @@ class TieBa:
   def __init__(self,username,password):
     self.username=username
     self.password=password
-    self.cookiepath="%s/tb.%s.cookie"%(module_path,username)
+    self.cookiepath="%s/tb.%s.cookie"%(module_path,username.decode('u8'))
     self.loaded=False
     self.cj = cookielib.LWPCookieJar(self.cookiepath)
     if os.path.isfile(self.cookiepath):
