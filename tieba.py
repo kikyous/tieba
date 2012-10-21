@@ -12,6 +12,14 @@ import cookielib
 import json
 import re,time,os,random,sys
 
+def get_module_path():
+    if hasattr(sys, "frozen"):
+        module_path = os.path.dirname(sys.executable)
+    else:
+        module_path = os.path.dirname(os.path.abspath(__file__))
+    return module_path
+module_path=get_module_path()
+
 class Log:
   if sys.platform.startswith('win'):
     def _(self,s):
@@ -39,8 +47,13 @@ class TieBa:
   def __init__(self,username,password):
     self.username=username
     self.password=password
-    cj = cookielib.CookieJar()
-    self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    self.cookiepath="%s/tb.%s.cookie"%(module_path,username)
+    self.loaded=False
+    self.cj = cookielib.LWPCookieJar(self.cookiepath)
+    if os.path.isfile(self.cookiepath):
+        self.cj.load(ignore_discard=True, ignore_expires=True)
+        self.loaded=True
+    self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
     self.opener.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux i686)')]
     urllib2.install_opener(self.opener)
 
@@ -124,6 +137,8 @@ class TieBa:
     fd = self.urlopen(reply_url,data)
 
   def login(self):
+    if self.loaded:
+  	return True
     def post():
       url = 'https://passport.baidu.com/v2/api/?login'
       page = self.urlopen(url,data)
@@ -160,32 +175,16 @@ class TieBa:
 
   def getTibBas(self):
     page=self.urlopen('http://tieba.baidu.com/')
+    self.cj.save()
     return re.findall('<a class="j_ba_link often_forum_link" forum-id="\d+" forum=".+" href="(.+)" target="_blank"',page)
 
 class WapTieBa(TieBa):
   def __init__(self,username,password):
     TieBa.__init__(self,username,password)
-  def login(self):
-    url='http://wappass.baidu.com/passport/'
-    data={
-        'login_username':self.username,
-        'login_loginpass':self.password,
-        'aaa':'登录',
-        'login':'yes',
-        'can_input':'0',
-        'u':'http://wapp.baidu.com/f/q---wiaui_1346040694_8698--1-1-0/m?',
-        'tpl':'wapp',
-        'tn':'bdIndex',
-        'pu':'',
-        'ssid':'000000',
-        'from':'',
-        'bd_page_type':'1',
-        'uid':'wiaui_1346040694_8698',
-        }
-    return self.urlopen(url,data)
 
   def getTibBas(self):
     page=self.urlopen('http://wapp.baidu.com/m?tn=bdFBW&tab=favorite')
+    self.cj.save()
     return re.findall('<a href="/f/[-_\w]+?/m\?kw=([%\w]+?)">.+?</a>',page)
 
   def enter(self,tb_kw):
@@ -215,9 +214,10 @@ if __name__ == '__main__':
     t = WapTieBa(a['username'],a['password'])
     if t.login():
       l.log('%s 登陆成功'%t.username)
+      #print t.getTibBas();continue
       for i in t.getTibBas():
         t.enter(i)
-        # h.reply(h.getTopics()[3:6])
+        # t.reply(t.getTopics()[3:6])
         t.sign()
   if len(sys.argv) < 2:
     raw_input('\npress enter to continue.')
