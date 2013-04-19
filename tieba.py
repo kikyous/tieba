@@ -93,7 +93,7 @@ class TieBa:
           args[1]['tbs']=self.getTbs(args[1]['tid'])
         else:
           args[1]['tbs']=self.getTbs()
-      self.urlopen(*args)
+      return self.urlopen(*args)
 
 
   def getFid(self):
