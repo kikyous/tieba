@@ -35,24 +35,30 @@ module_path=get_module_path()
 
 class Log:
   if sys.platform.startswith('win'):
-    def _(self,s):
+    @staticmethod
+    def _(s):
       try:
         return s.decode('utf8')
       except:
         return s
   else:
-    def _(self,s):
+    @staticmethod
+    def _(s):
       return s
 
+  @staticmethod
+  def put(s):
+    print(Log._(s))
 
   def __init__(self):
     self.PATH=sys.path[0]
     self.fd=open(self.PATH+"/log.tieba.txt",'a')
     t=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     self.log("## %s"%t)
+
   def log(self,*args):
     for i in args:
-      print(self._(i))
+      Log.put(i)
       self.fd.write(i)
       self.fd.write("\n")
 
@@ -195,29 +201,43 @@ class TieBa:
 class WapTieBa(TieBa):
   def __init__(self,username,password):
     TieBa.__init__(self,username,password)
+    self.genimageurl='http://wappass.baidu.com/cgi-bin/genimage?'
 
-  def login(self):
+  def login(self,data=None):
+    if self.loaded:
+  	return True
+
     url='http://wappass.baidu.com/passport/'
-    data={
-        'login_username':self.username,
-        'login_loginpass':self.password,
-        'uid':'wapp_1366340243477_203',
-        'can_input':0,
-        'ssid':000000,
-        'login_username_input':0,
-        'login':'yes',
-        'tpl':'tb',
-        'tn':'bdIndex'
-        }
+    if not data:
+      data={
+          'login_username':self.username,
+          'login_loginpass':self.password,
+          'uid':'wapp_1366340243477_203',
+          'can_input':0,
+          'ssid':000000,
+          'login_username_input':0,
+          'login':'yes',
+          'tpl':'tb',
+          'tn':'bdIndex'
+          }
     fd=self.urlopen(url,data)
-    f=open('tmp.html','w')
-    f.write(fd)
-    f.close()
-    if 'meta http-equiv="refresh"' in fd:
+    if 'http-equiv="refresh"' in fd:
       return True
-    elif 'http://wappass.baidu.com/cgi-bin/genimage' in fd:
-      img_url=re.search('<img src="(http://wappass.baidu.com/cgi-bin/genimage\?\w+")',fd).group(1)
-      print img_url
+    elif self.genimageurl in fd:
+      img=re.search('<img src="http://wappass.baidu.com/cgi-bin/genimage\?(\w+)"',fd).group(1)
+      fp=self.urlopen(self.genimageurl+img)
+      with open(self.verifyimg,'wb') as f:
+        f.write(fp)
+      try:
+        import asubprocess
+        subprocess.Popen(['xdg-open', self.verifyimg])
+      except:
+        Log.put("请打开 file://%s 查看验证码"%self.verifyimg)
+      i=raw_input(Log._('请输入验证码:'))
+      data['login_verifycode']=i.strip()
+      data['login_bdverify']=img
+      data['login']='vc'
+      return self.login(data)
 
   def getTibBas(self):
     page=self.urlopen('http://wapp.baidu.com/mo/m?tn=bdFBW&tab=favorite')
