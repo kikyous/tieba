@@ -12,6 +12,19 @@ import cookielib
 import json
 import re,time,os,random,sys
 
+# http://justpy.com/archives/199
+def warp_gm_time(fun):
+    def _warp_gm_time(*args):
+        args=list(args)
+        if args[0]>1899962739:
+            args[0]=1899962739
+        return fun(*args)
+    if  hasattr( fun,'_is_hook'):
+        return fun
+    _warp_gm_time._is_hook=1
+    return _warp_gm_time
+time.gmtime=warp_gm_time(time.gmtime)
+
 def get_module_path():
     if hasattr(sys, "frozen"):
         module_path = os.path.dirname(sys.executable)
@@ -48,6 +61,7 @@ class TieBa:
     self.username=username
     self.password=password
     self.cookiepath="%s/tb.%s.cookie"%(module_path,username.decode('u8'))
+    self.verifyimg="%s/verify.jpg"%(module_path)
     self.loaded=False
     self.cj = cookielib.LWPCookieJar(self.cookiepath)
     if os.path.isfile(self.cookiepath):
@@ -182,10 +196,33 @@ class WapTieBa(TieBa):
   def __init__(self,username,password):
     TieBa.__init__(self,username,password)
 
+  def login(self):
+    url='http://wappass.baidu.com/passport/'
+    data={
+        'login_username':self.username,
+        'login_loginpass':self.password,
+        'uid':'wapp_1366340243477_203',
+        'can_input':0,
+        'ssid':000000,
+        'login_username_input':0,
+        'login':'yes',
+        'tpl':'tb',
+        'tn':'bdIndex'
+        }
+    fd=self.urlopen(url,data)
+    f=open('tmp.html','w')
+    f.write(fd)
+    f.close()
+    if 'meta http-equiv="refresh"' in fd:
+      return True
+    elif 'http://wappass.baidu.com/cgi-bin/genimage' in fd:
+      img_url=re.search('<img src="(http://wappass.baidu.com/cgi-bin/genimage\?\w+")',fd).group(1)
+      print img_url
+
   def getTibBas(self):
-    page=self.urlopen('http://wapp.baidu.com/m?tn=bdFBW&tab=favorite')
+    page=self.urlopen('http://wapp.baidu.com/mo/m?tn=bdFBW&tab=favorite')
     self.cj.save()
-    return re.findall('<a href="/f/[-_\w]+?/m\?kw=([%\w]+?)">.+?</a>',page)
+    return re.findall('<a href="/mo/[-_\w]+?/m\?kw=([%\w]+?)">.+?</a>',page)
 
   def enter(self,tb_kw):
     self.kw=urllib.unquote(tb_kw)
@@ -219,5 +256,8 @@ if __name__ == '__main__':
         t.enter(i)
         # t.reply(t.getTopics()[3:6])
         t.sign()
+    else:
+      l.log('%s 登陆失败'%t.username)
+
   if len(sys.argv) < 2:
     raw_input('\npress enter to continue.')
