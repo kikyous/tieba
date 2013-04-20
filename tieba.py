@@ -276,6 +276,7 @@ if __name__ == '__main__':
         t.enter(i)
         # t.reply(t.getTopics()[3:6])
         t.sign()
+        time.sleep(0.5)
     else:
       l.log('%s 登陆失败'%t.username)
 
