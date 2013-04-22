@@ -122,17 +122,20 @@ class TieBa:
     sign_url="http://tieba.baidu.com/sign/add"
     data={'ie':'utf-8','kw':self.kw}
     tbs=self.getTbs()
-    if tbs==None:
-      res=None
-    else:
-      data['tbs']=tbs
-      res = self.urlopen(sign_url,data)
-      try:
-        res = json.loads(res)
-      except:
-        pass
-    if not res or res['error']!='':
-      l.log ('签到失败')
+    data['tbs']=tbs
+
+    res = self.urlopen(sign_url,data)
+    try:
+      res = json.loads(res)
+    except:
+      res={'error':u'签到失败'}
+
+    if res['error']!='':
+      l.log (res['error'].encode('u8'))
+      if res['no'] in [1102,1007]:
+        l.log ('5s后重新签到')
+        time.sleep(5)
+        self.sign()
     else:
       l.log ('签到成功','今日本吧第 %d 个签到'%res['data']['finfo']['current_rank_info']['sign_count'])
 
