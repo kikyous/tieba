@@ -128,7 +128,7 @@ class TieBa:
     try:
       res = json.loads(res)
     except:
-      res={'error':u'签到失败'}
+      res={'error':u'签到失败','no':0}
 
     if res['error']!='':
       l.log (res['error'].encode('u8'))
